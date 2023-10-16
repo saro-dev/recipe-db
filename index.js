@@ -16,7 +16,11 @@ const password = process.env.DB_PASSWORD;
 // Middleware
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({
+  origin: 'https://recipeeze.vercel.app', 
+  methods: 'GET,POST,PATCH,DELETE', 
+  optionsSuccessStatus: 204,
+}));
 app.use('/uploads/', express.static('uploads'));
 
 // Connect to MongoDB
