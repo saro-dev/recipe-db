@@ -7,11 +7,15 @@ const multer = require('multer');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const Redis = require('ioredis');
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const username = process.env.DB_USERNAME;
 const password = process.env.DB_PASSWORD;
+const redisClient = new Redis();
+
 
 // Middleware
 app.use(bodyParser.json({ limit: '10mb' }));
@@ -487,11 +491,30 @@ app.get('/author/:userId', async (req, res) => {
 
 app.get('/api/posts', async (req, res) => {
   try {
-    const posts = await Recipe.find().populate('userId', 'name');
-    res.status(200).json(posts);
+    // Attempt to retrieve data from the cache
+    const cachedPosts = await redisClient.get('cachedPosts');
+
+    if (cachedPosts) {
+      // Data found in the cache; return it
+      res.status(200).json(JSON.parse(cachedPosts));
+    } else {
+      // Data not found in the cache; fetch from the database
+      const posts = await Recipe.find().populate('userId', 'name');
+
+      // Store the fetched data in the cache with an expiration (e.g., 1 hour)
+      await redisClient.set('cachedPosts', JSON.stringify(posts), 'EX', 3600);
+
+      res.status(200).json(posts);
+    }
   } catch (error) {
     res.status(500).json({ error: 'Error fetching posts' });
   }
+});
+
+// Close the Redis connection when your application shuts down
+process.on('SIGINT', () => {
+  redisClient.quit();
+  process.exit();
 });
 
 app.post('/api/like/:postId', async (req, res) => {
