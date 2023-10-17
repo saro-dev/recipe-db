@@ -18,7 +18,7 @@ app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors({
   origin: 'https://recipeeze.vercel.app', 
-  methods: 'GET,POST,PATCH,DELETE', 
+  methods: 'GET,POST', 
   optionsSuccessStatus: 204,
 }));
 app.use('/uploads/', express.static('uploads'));
